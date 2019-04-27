@@ -16,7 +16,6 @@
     "jade": "^1.11.0",
     "morgan": "^1.9.1",
     "node-tesseract-ocr": "^0.1.0",
-    "opencv": "^6.2.0",
     "path": "^0.12.7",
     "request": "^2.88.0",
     "tesseract.js": "^1.0.14",
