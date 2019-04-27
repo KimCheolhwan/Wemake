@@ -1,21 +1,21 @@
 var createError = require('http-errors');
 const url = require('url');
 const fs = require('fs');
-const fileUrl = require('file-url');
+// const fileUrl = require('file-url');
 const request = require('request');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var http = require('http');
-var cv = require('opencv');
+// var cv = require('opencv');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-var Tesseract = require('tesseract.js');
-var tesseract = require('node-tesseract-ocr');
+// var Tesseract = require('tesseract.js');
+// var tesseract = require('node-tesseract-ocr');
 var app = express();
 const config = {
-  lang: 'kor',
+  lang: 'eng',
   oem: 0,
   psm: 3
 }
@@ -38,7 +38,7 @@ app.use(function(req, res, next) {
 });
 
 app.listen(80,function(req,res){
-   const path = __dirname + '/public/images/new9.jpg';
+   const path = __dirname + '/public/images/new18.jpg';
   fs.readFile(path,function(err,data){
      if(err) throw err;
      const subscriptionKey = '09784b26621c4e418fec4b7fc9d64a3a';
@@ -46,7 +46,7 @@ app.listen(80,function(req,res){
      const imageUrl = 'https://img.insight.co.kr/static/2016/04/05/700/4t972q6zb7074jj5a8o2.jpg';
      // Request parameters.
      const params = {
-         'language': 'ko',
+         'language': 'en',
          'detectOrientation': 'true',
      };
      const options = {
@@ -61,7 +61,7 @@ app.listen(80,function(req,res){
          }
      };
      request.post(options, (error, response, body) => {
-       var money="";
+       var money="0";
        var date;
        var approval_number;
        var business_number;
@@ -78,14 +78,14 @@ app.listen(80,function(req,res){
            for(var z=0;z<(json.regions[i].lines[j].words.length);z++){
              contents = json.regions[i].lines[j].words[z].text;
              //숫자 오류 변경
-             contents = contents.replace(/\?/g,"7");
-             contents = contents.replace(/이/g,"01");
-             contents = contents.replace(/!/g,"1");
+             // contents = contents.replace(/\?/g,"7");
+             // contents = contents.replace(/이/g,"01");
+             // contents = contents.replace(/!/g,"1");
              // console.log(contents);
              //date 추출
-             if(contents.match('^((19|20)[0-9]{2}|[0-9]{2})[/-](0[1-9]|1[012])[/-](0[1-9]|[12][0-9]|3[0-1])*')){
+             if(contents.match('^((19|20)[0-9]{2}|[0-9]{2})[/.-](0[1-9]|1[012])[/.-](0[1-9]|[12][0-9]|3[0-1])*')){
               date = contents.replace(/^20/,"");
-              date = date.replace(/-/g,"/")
+              date = date.replace(/[.-]/g,"/")
               date = date.substr(0,8)
              }
              //approval_number 추출
@@ -94,12 +94,13 @@ app.listen(80,function(req,res){
              }
            text += contents;
            }
-           // console.log(text + "     " + i);
+           console.log(text + "     " + i);
 
            //money 추출
-           if(text.match("^([1-9]+|[0-9]{1,3}([.,][0-9]{3})*원?)?$")){
-             if(text.replace(/[,.원]/g,"") > money.replace(/[,.원]/g,"")){
-              money = text.replace(/[,.원]/g,"");
+           if(text.match("^([1-9]+|[0-9]{1,3}([.,][0-9]{3})*)?$")){
+             var tmp = text.replace(/[,.]/g,"");
+             if(parseInt(tmp) > parseInt(money)){
+              money = tmp;
              }
            }
            //business_number 추출
