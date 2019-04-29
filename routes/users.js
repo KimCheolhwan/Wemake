@@ -9,22 +9,20 @@ router.get('/', function(req, res, next) {
 });
 
 router.post('/', function(req, res, next) {
-   const path = __dirname + '/../public/images/new10.jpg';
-  fs.readFile(path,function(err,data){
-     if(err) throw err;
+
      const subscriptionKey = '09784b26621c4e418fec4b7fc9d64a3a';
      const uriBase = 'https://westcentralus.api.cognitive.microsoft.com/vision/v2.0/ocr';
-     const imageUrl = 'https://img.insight.co.kr/static/2016/04/05/700/4t972q6zb7074jj5a8o2.jpg';
-     // Request parameters.
+     var url = req.body.action.detailParams.secureimage.origin;
+     url = url.slice(0,-1);
+     url = url.substr(5,url.length);
      const params = {
-         'language': 'ko',
+         'language': 'en',
          'detectOrientation': 'true',
      };
      const options = {
          uri: uriBase,
          qs: params,
-         // body:'{"url": ' + '"' + imageUrl + '"}',
-         body: data,
+         body:'{"url": ' + '"' + url + '"}',
          headers: {
              // 'Content-Type': 'application/json',
              'Content-Type': 'application/octet-stream',
@@ -32,7 +30,7 @@ router.post('/', function(req, res, next) {
          }
      };
      request.post(options, (error, response, body) => {
-       var money="";
+       var money="0";
        var date;
        var approval_number;
        var business_number;
@@ -49,57 +47,68 @@ router.post('/', function(req, res, next) {
            for(var z=0;z<(json.regions[i].lines[j].words.length);z++){
              contents = json.regions[i].lines[j].words[z].text;
              //숫자 오류 변경
-             contents = contents.replace(/\?/g,"7");
-             contents = contents.replace(/이/g,"01");
-             contents = contents.replace(/!/g,"1");
-             // console.log(contents);
+             contents = contents.replace(/l/g,"1");
+             contents = contents.replace(/o/g,"0");
+             contents = contents.replace(/±/g,"2");
              //date 추출
-             if(contents.match('^((19|20)[0-9]{2}|[0-9]{2})[/-](0[1-9]|1[012])[/-](0[1-9]|[12][0-9]|3[0-1])*')){
-              date = contents.replace(/^20/,"");
-              date = date.replace(/-/g,"/")
-              date = date.substr(0,8)
-             }
-             //approval_number 추출
-             if(contents.match("^([0-9]{8})$")){
-               approval_number = contents
+             // if(contents.match('((19|20)[0-9]{2}|[0-9]{2})[/.-](0[1-9]|1[012])[/.-](0[1-9]|[12][0-9]|3[0-1])*') && date == undefined){
+             if(contents.match('((19|20)[0-9]{2}|[0-9]{2})[/.-](0[1-9]|1[012])[/.-](0[1-9]|[12][0-9]|3[0-1])') && date == undefined){
+               date = contents.replace(/20/,"");
+               date = date.replace(/[.-]/g,"/")
+               var idx = date.indexOf('/')
+               date = date.substring(idx - 2,idx + 6)
              }
            text += contents;
            }
-           // console.log(text + "     " + i);
-
-           //money 추출
-           if(text.match("^([1-9]+|[0-9]{1,3}([.,][0-9]{3})*원?)?$")){
-             if(text.replace(/[,.원]/g,"") > money.replace(/[,.원]/g,"")){
-              money = text.replace(/[,.원]/g,"");
+           //approval_number 추출
+           if((text.match("^([0-9]{8})$") || text.match("([:.][0-9]{8})")) && approval_number == undefined){
+             if(text.match("[:.]")){
+               if(text.indexOf(':')>=0){
+                 var idx = text.indexOf(':');
+                 approval_number = text.substr(idx+1,8)
+               }else if(text.indexOf(".")){
+                 var idx = text.indexOf('.');
+                 approval_number = text.substr(idx+1,8)
+               }
+             }
+             else{
+               approval_number = text.substr(0,8);
              }
            }
+
            //business_number 추출
            if(text.match("[0-9]{3}-[0-9]{2}-[0-9]{5}")){
               var idx = text.indexOf('-')
               business_number = text.substring(idx - 3,idx + 9)
            }
+           //money 추출
+           // if(text.match("^([1-9]+|[0-9]{1,3}([.,][0-9]{3})*)?$")){
+           if(text.match("([0-9]{1,3})[.,]([0-9]{3})")){
+             var tmp = text.replace(/[,.]/g,"");
+             for(var a=0 ; a<tmp.length ;a++){
+               if(isNaN(Number(tmp[a]))){
+                 tmp = tmp.substr(0,a)
+                 break;
+               }
+             }
+             if(tmp.charAt(tmp.length-1) == '1'){
+               tmp = tmp.slice(0,-1);
+             }
+             if(parseInt(tmp) > parseInt(money) && Number(tmp) < 1000000){
+              money = tmp;
+             }
+           }
          }
        }
-       //DB와 비교 추가하기
-       if(date==undefined | money=="" | business_number==undefined | approval_number==undefined){
-         const responseBody = {
-             outputs: {
-               success: false
-             }
-         };
-         res.status(200).send(responseBody);
-       }else{
-         const responseBody = {
-             outputs: {
-               date : date,
-               money : money,
-               business_number : business_number,
-               approval_number : approval_number,
-               success : true,
-             }
-         };
-         res.status(200).send(responseBody);
-       }
+       const responceBody = {
+         outputs: {
+           date : date,
+           money : money,
+           business_number : business_number,
+           approval_number : approval_number
+         }
+       };
+       res.status(200).send(responceBody);
      });
   });
 });
