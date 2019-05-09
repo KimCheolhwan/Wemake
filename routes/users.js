@@ -90,13 +90,20 @@ router.post('/', function(req, res, next) {
 				//money 추출
 				// if(text.match("^([1-9]+|[0-9]{1,3}([.,][0-9]{3})*)?$")){
 				if(text.match("([0-9]{1,3})[.,]([0-9]{3})")){
-					var tmp = text.replace(/[,.]/g,"");
-					for(var a=0 ; a<tmp.length ;a++){
-						if(isNaN(Number(tmp[a]))){
-							tmp = tmp.substr(0,a)
-							break;
-						}
+					if(text.indexOf('.')>=0){
+						var idx = text.indexOf('.');
+					}else if(text.indexOf(',')>=0){
+						var idx = text.indexOf(',');
 					}
+					var tmp = text.replace(/[,.]/g,"");
+					console.log("@@@@@@@@@@@@@@@@@@@@@@@" + tmp);
+					//for(var a=0 ; a<tmp.length ;a++){
+					//	if(isNaN(Number(tmp[a]))){
+					//		tmp = tmp.substr(0,a)
+					//		break;
+					//	}
+					//}
+					tmp = tmp.slice(0,idx+3);
 					if(tmp.charAt(tmp.length-1) == '1'){
 						tmp = tmp.slice(0,-1);
 					}

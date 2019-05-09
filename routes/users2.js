@@ -157,3 +157,4 @@ router.post('/', function(req, res, next) {
 		res.status(200).send(responseBody);
 	});
 });
+module.exports = router;
